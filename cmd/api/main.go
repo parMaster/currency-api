@@ -15,12 +15,12 @@ import (
 )
 
 type Options struct {
-	Port       int      `long:"port" short:"p" env:"PORT" description:"Listening port" default:"8080"`
-	ApiKey     string   `long:"apikey" env:"APIKEY" description:"currencyfreaks.com API key" required:"true"`
-	Currencies []string `long:"currencies" env:"CURRENCIES" description:"currency codes to use" default:"UAH,USD,EUR,RON"`
-	Interval   int      `long:"interval" env:"INTERVAL" description:"update interval in seconds" default:"3600"`
-	Debug      bool     `long:"dbg" env:"DEBUG" description:"Enable debug mode with verbose logging"`
-	Version    bool     `short:"v" description:"Show version and exit"`
+	Port       int    `long:"port" short:"p" env:"PORT" description:"Listening port" default:"8080" json:"port"`
+	ApiKey     string `long:"apikey" env:"APIKEY" description:"currencyfreaks.com API key" required:"true" json:"-"`
+	Currencies string `long:"currencies" env:"CURRENCIES" description:"currency codes to use" default:"UAH,USD,EUR,RON" json:"currencies"`
+	Interval   int    `long:"interval" env:"INTERVAL" description:"update interval in seconds" default:"3600" json:"interval"`
+	Debug      bool   `long:"dbg" env:"DEBUG" description:"Enable debug mode with verbose logging" json:"debug"`
+	Version    bool   `short:"v" description:"Show version and exit" json:"-"`
 }
 
 type Server struct {

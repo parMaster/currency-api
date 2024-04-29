@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/parmaster/currency-api/internal/data"
 	"github.com/parmaster/currency-api/internal/validator"
 )
 
@@ -25,31 +27,39 @@ func (s *Server) router() http.Handler {
 	return router
 }
 
+type StatusResponse struct {
+	Status  string  `json:"status"`
+	Version string  `json:"version"`
+	Config  Options `json:"config"`
+}
+
 func (s *Server) Status(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Write([]byte("Status!\n"))
-	w.Write([]byte("Version: " + version + "\n"))
-	w.Write([]byte(fmt.Sprintf("Currencies: %v\n", s.cfg.Currencies)))
+	status := StatusResponse{
+		Status:  "ok",
+		Version: version,
+		Config:  s.cfg,
+	}
+
+	err := s.writeJSON(w, http.StatusOK, status, nil)
+	if err != nil {
+		log.Printf("[ERROR] failed to write response, %+v", err)
+		http.Error(w, "failed to write response", http.StatusInternalServerError)
+	}
+
 }
 
 func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Write([]byte("Welcome!\n"))
 }
 
-type Rate struct {
-	Date  string            `json:"date"`
-	Base  string            `json:"base"`
-	Rates map[string]string `json:"rates"`
-}
-
 // Rates returns exchange rates, stored in the database
 // GET /v1/rates[/date]
 func (s *Server) Rates(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	validator := validator.New()
-
 	dateStr := ps.ByName("date")
-	var date time.Time
 	date, err := time.Parse("2006-01-02", dateStr)
+
+	validator := validator.New()
 	validator.Check(dateStr == "" || err == nil, "date", "invalid date format, use 2006-01-02")
 
 	if !validator.Valid() {
@@ -61,10 +71,18 @@ func (s *Server) Rates(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	if !date.IsZero() {
-		w.Write([]byte("Rates for date: " + date.Format("2006-01-02") + "\n"))
+	rates := data.RateResponse{
+		Date:  data.Date(date),
+		Base:  "USD",
+		Rates: map[string]float32{"UAH": 39.5, "EUR": 0.85, "RON": 4.8},
 	}
-	w.Write([]byte("Rates!\n"))
+
+	err = s.writeJSON(w, http.StatusOK, rates, nil)
+	if err != nil {
+		log.Printf("[ERROR] failed to write response, %+v", err)
+		http.Error(w, "failed to write response", http.StatusInternalServerError)
+	}
+
 }
 
 func (s *Server) Pair(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
