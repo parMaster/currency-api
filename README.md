@@ -22,6 +22,6 @@ Job interview test task
 
 5. Implement logging of API requests in the database. Save in the logs - date, type of request (by date / by pair)
 
-- 6. Use docker for the project.
+6. Use docker for the project.
 
 7. When initializing the server, fill the database with initial data on exchange rates for several dates (any values)
