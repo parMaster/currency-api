@@ -63,15 +63,22 @@ func (s *Server) Run() {
 }
 
 func main() {
-	// Parsing command line arguments
 	var cfg Options
 	p := flags.NewParser(&cfg, flags.PassDoubleDash|flags.HelpFlag)
+	// Parsing config file with defaults
+	inip := flags.NewIniParser(p)
+	inip.ParseAsDefaults = true
+	err := inip.ParseFile("config.ini")
+	if err != nil {
+		log.Printf("[INFO] config file with defaults was not parsed: %v", err)
+	}
+	// Parsing command line arguments overriding config file
 	if _, err := p.Parse(); err != nil {
 		if err.(*flags.Error).Type != flags.ErrHelp {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
-		p.WriteHelp(os.Stderr)
+		flags.NewParser(&cfg, flags.PassDoubleDash|flags.HelpFlag).WriteHelp(os.Stderr)
 		os.Exit(2)
 	}
 

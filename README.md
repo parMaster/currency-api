@@ -14,13 +14,13 @@ Job interview test task
 
 	2.1. Receiving rates for a specified date (all 4 currencies)
 
-- 	2.2. Obtaining currency pairs: UAH-USD.
+	2.2. Obtaining currency pairs: UAH-USD.
 
 3. Implement validation of requests (dates, currency tickers)
 
 4. Implement API access via API key
 
-- 5. Implement logging of API requests in the database. Save in the logs - date, type of request (by date / by pair)
+5. Implement logging of API requests in the database. Save in the logs - date, type of request (by date / by pair)
 
 - 6. Use docker for the project.
 
