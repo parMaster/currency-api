@@ -1,12 +1,16 @@
 package main
 
 import (
+	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/parmaster/currency-api/internal/client"
 	"github.com/parmaster/currency-api/internal/data"
+	"github.com/parmaster/currency-api/internal/store"
 	"github.com/parmaster/currency-api/internal/validator"
 )
 
@@ -69,19 +73,17 @@ func (s *Server) Rates(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	// if date is empty, use today
-	if date.IsZero() {
-		date = time.Now()
+	rates, err := s.GetUpdateRates(date)
+	if err != nil && err != ErrNoContent {
+		date = time.Now().AddDate(0, 0, -1)
+		rates, err = s.GetUpdateRates(date)
 	}
-	// prefer data from the database
-	// if not found, use the API and store in the database
-	// historical data can be unavailable
-
-	// TODO: log requests in database
-
-	rates := data.RateResponse{
-		Date:  data.Date(date),
-		Base:  "USD",
-		Rates: map[string]float32{"UAH": 39.5, "EUR": 0.85, "RON": 4.8},
+	if err != nil && errors.Is(err, ErrNoContent) {
+		http.Error(w, "no rates available", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, "failed to get rates: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	err = s.writeJSON(w, http.StatusOK, rates, nil)
@@ -89,6 +91,36 @@ func (s *Server) Rates(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		http.Error(w, "failed to write response: "+err.Error(), http.StatusInternalServerError)
 	}
 
+}
+
+var ErrNoContent = errors.New("no rates available")
+
+func (s *Server) GetUpdateRates(date time.Time) (data.Rates, error) {
+	// prefer data from the database
+	rates, err := s.db.Read(date)
+	if err == store.ErrNotFound {
+		// if not found, use the API and store in the database
+		client := client.New(s.cfg.ApiKey)
+		rates, err = client.GetRates(strings.Split(s.cfg.Currencies, ","), date, []byte{})
+		if err == nil {
+			err = s.db.Write(rates)
+			if err != nil {
+				log.Printf("[ERROR] failed to write rates: %v", err)
+			}
+		} else {
+			log.Printf("[ERROR] failed to get rates: %v", err)
+			return data.Rates{}, err
+		}
+	} else if err != nil {
+		log.Printf("[ERROR] failed to read rates: %v", err)
+		return data.Rates{}, err
+	}
+	// historical data can be unavailable
+
+	if len(rates.Rates) == 0 {
+		return data.Rates{}, ErrNoContent
+	}
+	return rates, nil
 }
 
 func (s *Server) Pair(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

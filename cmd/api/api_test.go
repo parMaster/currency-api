@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/parmaster/currency-api/internal/data"
+	"github.com/parmaster/currency-api/internal/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +23,8 @@ func TestServer_Status(t *testing.T) {
 		Interval:   420,
 		Debug:      true,
 	}
-	s := NewServer(cfg, context.Background())
+	db, _ := store.NewSQLite(context.Background(), ":memory:")
+	s := NewServer(cfg, db, context.Background())
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
 
@@ -36,7 +40,9 @@ func TestServer_Status(t *testing.T) {
 }
 
 func TestServer_Rates(t *testing.T) {
-	s := NewServer(Options{}, context.Background())
+	db, err := store.NewSQLite(context.Background(), fmt.Sprintf("file:%s/test.db?cache=shared&mode=rwc", os.TempDir()))
+	assert.Nil(t, err, "Failed to open SQLite storage: %e", err)
+	s := NewServer(Options{ApiKey: os.Getenv("APIKEY")}, db, context.Background())
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/v1/rates", nil)
 
@@ -53,7 +59,7 @@ func TestServer_Rates(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code, "empty date should return 200 OK")
 
 	w = httptest.NewRecorder()
-	s.Rates(w, r, httprouter.Params{httprouter.Param{Key: "date", Value: "2021-04-29"}})
+	s.Rates(w, r, httprouter.Params{httprouter.Param{Key: "date", Value: "2024-04-20"}})
 	assert.Equal(t, http.StatusOK, w.Code, "valid date should return 200 OK")
 
 	// Check response
@@ -61,9 +67,9 @@ func TestServer_Rates(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &rates)
 
 	assert.Equal(t, "USD", rates.Base, "base currency should be USD")
-	date, err := time.Parse("2006-01-02 15:04:05", "2021-04-29 00:00:00")
+	date, err := time.Parse("2006-01-02 15:04:05", "2024-04-20 00:00:00")
 	assert.Nil(t, err, "date should be valid")
-	assert.Equal(t, data.Date(date), rates.Date, "base currency should be USD")
+	assert.Equal(t, data.Date(date), rates.Date, "date should match")
 	assert.NotEmpty(t, rates.Rates, "rates should not be empty")
 
 }

@@ -27,7 +27,23 @@ func NewSQLite(ctx context.Context, path string) (*SQLiteStorage, error) {
 		sqliteDatabase.Close()
 	}()
 
-	q := `
+	initialData := ``
+	// check if the rates table exists
+	q := `SELECT name FROM sqlite_master WHERE type='table' AND name='rates';`
+	row := sqliteDatabase.QueryRowContext(ctx, q)
+	if err := row.Scan(); err == sql.ErrNoRows {
+		initialData = `
+		INSERT INTO rates (date, base, currency, rate) VALUES
+		('2024-04-20', 'USD', 'UAH', 39.4),
+		('2024-04-20', 'USD', 'EUR', 0.8),
+		('2024-04-20', 'USD', 'RON', 4.7),
+		('2024-04-21', 'USD', 'UAH', 39.5),
+		('2024-04-21', 'USD', 'EUR', 0.9),
+		('2024-04-21', 'USD', 'RON', 4.8);
+	`
+	}
+
+	q = `
 	CREATE TABLE IF NOT EXISTS rates (
 		date TEXT,
 		base TEXT,
@@ -43,6 +59,11 @@ func NewSQLite(ctx context.Context, path string) (*SQLiteStorage, error) {
 	);
 	`
 	_, err = sqliteDatabase.ExecContext(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sqliteDatabase.ExecContext(ctx, initialData)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +116,9 @@ func (s *SQLiteStorage) Read(date time.Time) (res data.Rates, err error) {
 		}
 		res.Base = line.base
 		res.Rates[line.currency] = data.FloatRate(line.rate)
+	}
+	if len(res.Rates) == 0 {
+		return res, ErrNotFound
 	}
 
 	return

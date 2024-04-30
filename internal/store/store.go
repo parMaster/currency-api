@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrRecordNotFound = errors.New("record not found")
+	ErrNotFound = errors.New("no data found")
 )
 
 type Storer interface {

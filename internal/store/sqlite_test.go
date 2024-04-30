@@ -2,9 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -12,27 +9,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Returns system temp dir (i.e. /tmp on Linux, no trailing slash).
-// If TEMP_DIR environment variable is set, it is returned instead
-func tempDir() string {
+// Test_Sqlite_InitData tests the initialization of the SQLite storage
+// with the initial data
+func Test_Sqlite_InitData(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	if os.Getenv("TEMP_DIR") != "" {
-		return os.Getenv("TEMP_DIR")
-	}
+	var err error
+	store, err := NewSQLite(ctx, ":memory:")
+	assert.Nil(t, err, "Failed to open SQLite storage: %e", err)
 
-	return os.TempDir()
+	// Check if there are 6 initial rows in the rates table
+	cnt := 0
+	row := store.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM rates")
+	err = row.Scan(&cnt)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, cnt)
+
+	// Tear down the storage
+	store.cleanup()
 }
-
 func Test_Sqlite_Full(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var err error
-	store, err := NewSQLite(ctx, fmt.Sprintf("file:%s/test.db?cache=shared&mode=rwc", tempDir()))
-	if err != nil {
-		log.Printf("[ERROR] Failed to open SQLite storage: %e", err)
-	}
+	store, err := NewSQLite(ctx, ":memory:")
+	assert.Nil(t, err, "Failed to open SQLite storage: %e", err)
 
 	ratesInit := data.Rates{
 		Date: data.Date(time.Now()),

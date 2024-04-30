@@ -12,11 +12,12 @@ import (
 
 	"github.com/go-pkgz/lgr"
 	"github.com/jessevdk/go-flags"
+	"github.com/parmaster/currency-api/internal/store"
 )
 
 type Options struct {
 	Port       int    `long:"port" short:"p" env:"PORT" description:"Listening port" default:"8080" json:"port"`
-	DbPath     string `long:"dbpath" env:"DBPATH" description:"Path to sqlite3 DB file" required:"true" json:"dbpath"`
+	DbPath     string `long:"dbpath" env:"DBPATH" description:"Path to sqlite3 DB file" default:"file:/tmp/currency-api.db?mode=rwc&_journal_mode=WAL" json:"dbpath"`
 	ApiKey     string `long:"apikey" env:"APIKEY" description:"currencyfreaks.com API key" required:"true" json:"-"`
 	Currencies string `long:"currencies" env:"CURRENCIES" description:"currency codes to use" default:"UAH,USD,EUR,RON" json:"currencies"`
 	Interval   int    `long:"interval" env:"INTERVAL" description:"update interval in seconds" default:"3600" json:"interval"`
@@ -26,11 +27,12 @@ type Options struct {
 
 type Server struct {
 	cfg Options
+	db  store.Storer
 	ctx context.Context
 }
 
-func NewServer(cfg Options, ctx context.Context) *Server {
-	return &Server{cfg: cfg, ctx: ctx}
+func NewServer(cfg Options, db store.Storer, ctx context.Context) *Server {
+	return &Server{cfg: cfg, db: db, ctx: ctx}
 }
 
 func (s *Server) Run() {
@@ -109,6 +111,12 @@ func main() {
 		}
 	}()
 
+	// Database setup
+	db, err := store.NewSQLite(ctx, cfg.DbPath)
+	if err != nil {
+		log.Fatalf("[ERROR] failed to open SQLite storage: %v", err)
+	}
+
 	// Starting the server
-	NewServer(cfg, ctx).Run()
+	NewServer(cfg, db, ctx).Run()
 }
