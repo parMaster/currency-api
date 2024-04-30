@@ -55,7 +55,6 @@ Runs all available tests
 
 ## API endpoints
 `/v1/rates/` - get latest exchange rates for the currencies specified in the config file
-Example response:
 ```json
 {
 	"date": "2024-04-30 00:00:00",
@@ -70,7 +69,6 @@ Example response:
 ```
 
 `/v1/rates/<date>/` - get exchange rates for the specified date (e.g. 2024-04-20)
-Example response:
 ```json
 {
 	"date": "2024-04-20 00:00:00",
@@ -84,8 +82,6 @@ Example response:
 ```
 
 `/v1/pair/<pair>/` - get exchange rates for the specified currency pair (e.g. UAH-RON)
-
-Example response:
 ```json
 {
 	"date": "2024-04-30",
