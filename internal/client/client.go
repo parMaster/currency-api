@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/parmaster/currency-api/internal/data"
 )
@@ -27,23 +28,32 @@ curl 'https://api.currencyfreaks.com/v2.0/rates/latest?apikey=APIKEY&symbols=PKR
 */
 
 type Client struct {
-	ApiUrl string
+	ApiUrl map[string]string
 	ApiKey string
 }
 
 func New(apiKey string) *Client {
 	return &Client{
-		ApiUrl: "https://api.currencyfreaks.com/v2.0/rates/latest",
+		ApiUrl: map[string]string{
+			"latest":     "https://api.currencyfreaks.com/v2.0/rates/latest",
+			"historical": "https://api.currencyfreaks.com/v2.0/rates/historical",
+		},
 		ApiKey: apiKey,
 	}
 }
 
-func (c *Client) request(symbols []string) ([]byte, error) {
+// TODO:
+func (c *Client) request(symbols []string, date string) ([]byte, error) {
 	params := url.Values{}
 	params.Add(`apikey`, c.ApiKey)
 	params.Add(`symbols`, strings.Join(symbols, `,`))
-	log.Printf("[DEBUG] CF request: %s?%s", c.ApiUrl, params.Encode())
-	response, err := http.Get(fmt.Sprintf("%s?%s", c.ApiUrl, params.Encode()))
+	apiType := `latest`
+	if date != "" {
+		params.Add(`date`, date)
+		apiType = `historical`
+	}
+	log.Printf("[DEBUG] CF request: %s?%s", c.ApiUrl[apiType], params.Encode())
+	response, err := http.Get(fmt.Sprintf("%s?%s", c.ApiUrl[apiType], params.Encode()))
 	if err != nil {
 		return []byte{}, err
 	}
@@ -59,11 +69,15 @@ func (c *Client) request(symbols []string) ([]byte, error) {
 	return body, nil
 }
 
-func (c *Client) GetRates(symbols []string, testResponse []byte) (data.Rates, error) {
+func (c *Client) GetRates(symbols []string, date time.Time, testResponse []byte) (data.Rates, error) {
 	var err error
+	dateStr := date.Format("2006-01-02")
+	if date.IsZero() {
+		dateStr = ""
+	}
 	response := testResponse
 	if len(testResponse) == 0 {
-		response, err = c.request(symbols)
+		response, err = c.request(symbols, dateStr)
 		if err != nil {
 			return data.Rates{}, err
 		}

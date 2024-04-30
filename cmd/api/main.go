@@ -16,6 +16,7 @@ import (
 
 type Options struct {
 	Port       int    `long:"port" short:"p" env:"PORT" description:"Listening port" default:"8080" json:"port"`
+	DbPath     string `long:"dbpath" env:"DBPATH" description:"Path to sqlite3 DB file" required:"true" json:"dbpath"`
 	ApiKey     string `long:"apikey" env:"APIKEY" description:"currencyfreaks.com API key" required:"true" json:"-"`
 	Currencies string `long:"currencies" env:"CURRENCIES" description:"currency codes to use" default:"UAH,USD,EUR,RON" json:"currencies"`
 	Interval   int    `long:"interval" env:"INTERVAL" description:"update interval in seconds" default:"3600" json:"interval"`

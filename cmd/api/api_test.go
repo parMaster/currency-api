@@ -42,8 +42,10 @@ func TestServer_Rates(t *testing.T) {
 
 	// Invalid date
 	s.Rates(w, r, httprouter.Params{httprouter.Param{Key: "date", Value: "2021-01-"}})
-	assert.Contains(t, w.Body.String(), "Validation errors!", "invalid date should return 400 Bad Request")
-	assert.Contains(t, w.Body.String(), "date: invalid date format, use 2006-01-02", "invalid date should return 400 Bad Request")
+	assert.Contains(t, w.Body.String(), "validation errors", "invalid date should return 400 Bad Request")
+	assert.Contains(t, w.Body.String(), "invalid date format, use 2006-01-02", "invalid date should return 400 Bad Request")
+	var resp any
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
 	// Happy paths
 	w = httptest.NewRecorder()

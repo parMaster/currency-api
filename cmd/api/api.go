@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -42,10 +41,8 @@ func (s *Server) Status(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	err := s.writeJSON(w, http.StatusOK, status, nil)
 	if err != nil {
-		log.Printf("[ERROR] failed to write response, %+v", err)
-		http.Error(w, "failed to write response", http.StatusInternalServerError)
+		http.Error(w, "failed to write response: "+err.Error(), http.StatusInternalServerError)
 	}
-
 }
 
 func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -63,13 +60,23 @@ func (s *Server) Rates(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	validator.Check(dateStr == "" || err == nil, "date", "invalid date format, use 2006-01-02")
 
 	if !validator.Valid() {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Validation errors!\n"))
-		for key, message := range validator.Errors {
-			w.Write([]byte(fmt.Sprintf("%s: %s\n", key, message)))
-		}
+		errors := struct {
+			Error   string            `json:"error"`
+			Message map[string]string `json:"message"`
+		}{Error: "validation errors", Message: validator.Errors}
+		s.writeJSON(w, http.StatusBadRequest, errors, nil)
 		return
 	}
+
+	// if date is empty, use today
+	if date.IsZero() {
+		date = time.Now()
+	}
+	// prefer data from the database
+	// if not found, use the API and store in the database
+	// historical data can be unavailable
+
+	// TODO: log requests in database
 
 	rates := data.RateResponse{
 		Date:  data.Date(date),
@@ -79,13 +86,31 @@ func (s *Server) Rates(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	err = s.writeJSON(w, http.StatusOK, rates, nil)
 	if err != nil {
-		log.Printf("[ERROR] failed to write response, %+v", err)
-		http.Error(w, "failed to write response", http.StatusInternalServerError)
+		http.Error(w, "failed to write response: "+err.Error(), http.StatusInternalServerError)
 	}
 
 }
 
 func (s *Server) Pair(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	w.Write([]byte("Pair!\n"))
-	w.Write([]byte(ps.ByName("pair")))
+	pair := strings.Split(ps.ByName("pair"), "-")
+
+	valid := validator.New()
+	valid.Check(len(pair) == 2, "pair", "invalid pair format, use USD-UAH")
+	permittedValue := validator.PermittedValue(pair[0], strings.Split(s.cfg.Currencies, ",")...)
+	valid.Check(permittedValue, "pair", "invalid currency, use these: "+s.cfg.Currencies)
+
+	if !valid.Valid() {
+		errors := struct {
+			Error   string            `json:"error"`
+			Message map[string]string `json:"message"`
+		}{Error: "validation errors", Message: valid.Errors}
+		s.writeJSON(w, http.StatusBadRequest, errors, nil)
+		return
+	}
+
+	err := s.writeJSON(w, http.StatusOK, pair, nil)
+	if err != nil {
+		http.Error(w, "failed to write response: "+err.Error(), http.StatusInternalServerError)
+	}
+
 }

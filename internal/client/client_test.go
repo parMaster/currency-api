@@ -12,7 +12,7 @@ func Test_GetRates(t *testing.T) {
 
 	mock := []byte(`{"date":"2024-04-29 00:00:00+00","base":"USD","rates":{"RON":"4.648225","EUR":"0.9340084415835656","USD":"1.0","UAH":"39.65869122539661"}}`)
 	client := New("test")
-	rates, err := client.GetRates([]string{"USD", "UAH", "EUR", "RON"}, mock)
+	rates, err := client.GetRates([]string{"USD", "UAH", "EUR", "RON"}, time.Time{}, mock)
 
 	assert.Nil(t, err)
 	assert.NotEmpty(t, rates)

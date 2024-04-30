@@ -33,6 +33,19 @@ func (r *Date) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (r *Date) ParseDate(date string) error {
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return err
+	}
+	*r = Date(t)
+	return nil
+}
+
+func (r Date) String() string {
+	return time.Time(r).Format("2006-01-02")
+}
+
 // Rates is a client response
 type Rates struct {
 	Date  Date                 `json:"date"`
