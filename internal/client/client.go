@@ -27,7 +27,6 @@ func New(apiKey string) *Client {
 	}
 }
 
-// TODO:
 func (c *Client) request(endpoint string, parameters map[string]string) ([]byte, error) {
 	params := url.Values{}
 	params.Add(`apikey`, c.ApiKey)
