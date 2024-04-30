@@ -5,7 +5,7 @@ This is a simple REST API that provides exchange rates for the specified list of
 ## Prerequisites
 Put an API key for the currencyfreaks.com API in the `config.ini` file:
 ```bash
-	apikey = your_api_key
+apikey = your_api_key
 ```
 or pass it as a command line argument:
 ```bash
@@ -21,8 +21,8 @@ Correct API key should be put in the `config.ini` file before building the docke
 
 To build and run the docker container:
 ```bash
-	docker build -t currency-api .
-	docker run -it --rm -p 8080:8080 currency-api
+docker build -t currency-api .
+docker run -it --rm -p 8080:8080 currency-api
 ```
 
 API will be available at `http://localhost:8080/`
