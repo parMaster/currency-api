@@ -23,3 +23,4 @@ go.work
 
 # Secrets in .env file
 .env
+.ini

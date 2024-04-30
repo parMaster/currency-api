@@ -109,7 +109,13 @@ var ErrNoContent = errors.New("no rates available")
 
 func (s *Server) GetUpdateRates(date time.Time) (data.Rates, error) {
 	// prefer data from the database
-	rates, err := s.db.Read(date)
+	var rates data.Rates
+	var err error
+	if date.IsZero() {
+		rates, err = s.db.Read(time.Now())
+	} else {
+		rates, err = s.db.Read(date)
+	}
 	if err == store.ErrNotFound {
 		// if not found, use the API
 		client := client.New(s.cfg.ApiKey)

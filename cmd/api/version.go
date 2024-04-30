@@ -1,3 +1,3 @@
 package main
 
-var version = "806e6fa-main-20240430"
+var version = "6069712-main-20240430"
