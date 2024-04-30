@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,10 +40,27 @@ func TestServer_Status(t *testing.T) {
 	assert.Equal(t, cfg, status.Config, "config should match")
 }
 
+func getApiKey() string {
+	apiKey := os.Getenv("APIKEY")
+	if apiKey == "" {
+		key, err := os.ReadFile("../../apikey.env")
+		if err != nil {
+			return ""
+		}
+		apiKey = strings.TrimSpace(string(key))
+	}
+	return apiKey
+}
+
 func TestServer_Rates(t *testing.T) {
 	db, err := store.NewSQLite(context.Background(), fmt.Sprintf("file:%s/test.db?cache=shared&mode=rwc", os.TempDir()))
 	assert.Nil(t, err, "Failed to open SQLite storage: %e", err)
-	s := NewServer(Options{ApiKey: os.Getenv("APIKEY")}, db, context.Background())
+
+	apiKey := getApiKey()
+	if apiKey == "" {
+		t.Skip("APIKEY not set")
+	}
+	s := NewServer(Options{ApiKey: apiKey, Currencies: "UAH,USD,EUR,RON"}, db, context.Background())
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/v1/rates", nil)
 
@@ -71,5 +89,25 @@ func TestServer_Rates(t *testing.T) {
 	assert.Nil(t, err, "date should be valid")
 	assert.Equal(t, data.Date(date), rates.Date, "date should match")
 	assert.NotEmpty(t, rates.Rates, "rates should not be empty")
+}
 
+func Test_ServerPairs(t *testing.T) {
+	db, err := store.NewSQLite(context.Background(), ":memory:")
+	assert.Nil(t, err, "Failed to open SQLite storage: %e", err)
+	apiKey := getApiKey()
+	if apiKey == "" {
+		t.Skip("APIKEY not set")
+	}
+	s := NewServer(Options{ApiKey: apiKey, Currencies: "USD,UAH,RON,EUR"}, db, context.Background())
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/v1/pair/USD-UAH", nil)
+
+	s.Pair(w, r, httprouter.Params{httprouter.Param{Key: "pair", Value: "USD-UAH"}})
+	assert.Equal(t, http.StatusOK, w.Code, "pair should return 200 OK")
+
+	pair := data.PairResponse{}
+	json.Unmarshal(w.Body.Bytes(), &pair)
+
+	assert.Equal(t, "USD-UAH", pair.Pair, "base currency should be USD")
+	assert.NotEmpty(t, pair.Rate, "rate should not be empty")
 }

@@ -84,6 +84,43 @@ func (s *SQLiteStorage) Write(d data.Rates) error {
 	return nil
 }
 
+func (s *SQLiteStorage) Log(reqType, request string) error {
+
+	q := `INSERT INTO log(dateTime, type, request) VALUES ($1, $2, $3) `
+	_, err := s.DB.ExecContext(s.ctx, q, time.Now().Format("2006-01-02 15:04:05"), reqType, request)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SQLiteStorage) ReadLogs() (logs []string, err error) {
+
+	q := "SELECT * FROM `log` ORDER BY `id` DESC LIMIT 10"
+	rows, err := s.DB.QueryContext(s.ctx, q)
+	if err != nil {
+		return logs, err
+	}
+	defer rows.Close()
+
+	line := struct {
+		id       int
+		dateTime string
+		reqType  string
+		request  string
+	}{}
+	for rows.Next() {
+		err = rows.Scan(&line.id, &line.dateTime, &line.reqType, &line.request)
+		if err != nil {
+			return logs, err
+		}
+
+		logs = append(logs, fmt.Sprintf("%s | %s | %s", line.dateTime, line.reqType, line.request))
+	}
+	return
+}
+
 type line struct {
 	date     string
 	base     string

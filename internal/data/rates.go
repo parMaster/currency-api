@@ -7,11 +7,18 @@ import (
 	"time"
 )
 
+// PairResponse is a response from the API
+type PairResponse struct {
+	Date string    `json:"date"`
+	Pair string    `json:"pair"`
+	Rate FloatRate `json:"rate"`
+}
+
 // RateResponse is a response from the API
 type RateResponse struct {
-	Date  Date               `json:"date"`
-	Base  string             `json:"base"`
-	Rates map[string]float32 `json:"rates"`
+	Date  Date                 `json:"date"`
+	Base  string               `json:"base"`
+	Rates map[string]FloatRate `json:"rates"`
 }
 
 type Date time.Time

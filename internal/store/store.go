@@ -14,10 +14,14 @@ var (
 )
 
 type Storer interface {
-	// Read reads records for the given module from the database.
+	// Read reads records for the given module from the database
 	Read(time.Time) (data.Rates, error)
-	// Write writes the data to the database.
+	// Write writes the data to the database
 	Write(data.Rates) error
+	// Log requests to the database
+	Log(string, string) error
+	// ReadLogs return 10 most recent logs from the database
+	ReadLogs() ([]string, error)
 }
 
 func Load(ctx context.Context, path string, s *Storer) error {
