@@ -25,6 +25,8 @@ type Options struct {
 	Version    bool   `short:"v" description:"Show version and exit" json:"-"`
 }
 
+var version = "undefined"
+
 type Server struct {
 	cfg Options
 	db  store.Storer

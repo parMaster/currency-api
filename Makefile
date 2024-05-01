@@ -10,7 +10,7 @@ GROUP=$(shell id -gn)
 
 .PHONY: build run test deploy status remove
 build: info
-	- go build -o ./bin/ ./cmd/api
+	- go build -v --ldflags="-X main.version=$(REV)" -o ./bin/ ./cmd/api
 
 run: build
 	- ./bin/api
@@ -20,7 +20,5 @@ test:
 
 info:
 	- @echo "revision $(REV)"
-	- @echo "branch $(BRANCH)"
-	- @echo "package main\n\nvar version = \"$(REV)\"" > cmd/api/version.go
 
 .DEFAULT_GOAL: build

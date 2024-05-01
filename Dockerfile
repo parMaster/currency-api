@@ -22,7 +22,7 @@ ADD . /build
 WORKDIR /build
 
 # Build the application with the vendor dependencies and the cache
-RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -mod=vendor -v -o currency-api ./cmd/api
+RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 make
 
 # Production stage
 # Not using scratch because of the CGO_ENABLED=1
@@ -36,11 +36,11 @@ COPY --from=base /etc/passwd /etc/passwd
 COPY --from=base /etc/group /etc/group
 
 # Copy the binary and the configuration file from the base image
-COPY --from=base /build/currency-api .
+COPY --from=base /build/bin/api .
 COPY --from=base /build/config.ini .
 
 # Change the ownership of the binary and the configuration file
-RUN chmod +x ./currency-api
+RUN chmod +x ./api
 
 # Set the user to run the application
 USER api-user:api-user
@@ -48,4 +48,4 @@ USER api-user:api-user
 # Expose the port
 EXPOSE 8080
 
-CMD ["./currency-api"]
+CMD ["./api"]
