@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -40,7 +41,7 @@ func NewServer(cfg Options, db store.Storer, ctx context.Context) *Server {
 func (s *Server) Run() {
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", s.cfg.Port),
+		Addr:         net.JoinHostPort("", fmt.Sprintf("%d", s.cfg.Port)),
 		Handler:      s.router(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,

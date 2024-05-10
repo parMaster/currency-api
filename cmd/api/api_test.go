@@ -82,12 +82,13 @@ func TestServer_Rates(t *testing.T) {
 
 	// Check response
 	rates := data.RateResponse{}
-	json.Unmarshal(w.Body.Bytes(), &rates)
+	err = json.Unmarshal(w.Body.Bytes(), &rates)
+	assert.Nil(t, err, "response should be valid")
 
 	assert.Equal(t, "USD", rates.Base, "base currency should be USD")
 	date, err := time.Parse("2006-01-02 15:04:05", "2024-04-20 00:00:00")
 	assert.Nil(t, err, "date should be valid")
-	assert.Equal(t, data.Date(date), rates.Date, "date should match")
+	assert.Equal(t, data.Date{Time: date}, rates.Date, "date should match")
 	assert.NotEmpty(t, rates.Rates, "rates should not be empty")
 }
 

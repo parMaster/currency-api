@@ -39,7 +39,7 @@ func Test_Sqlite_Full(t *testing.T) {
 	assert.Nil(t, err, "Failed to open SQLite storage: %e", err)
 
 	ratesInit := data.Rates{
-		Date: data.Date(time.Now()),
+		Date: data.Date{Time: time.Now()},
 		Base: "USD",
 		Rates: map[string]data.FloatRate{
 			"UAH": 27.5,
@@ -58,7 +58,7 @@ func Test_Sqlite_Full(t *testing.T) {
 	assert.Equal(t, ratesInit.Rates, rates.Rates)
 
 	// New rates for the previous day
-	rates.Date = data.Date(time.Now().AddDate(0, 0, -1))
+	rates.Date = data.Date{Time: time.Now().AddDate(0, 0, -1)}
 	rates.Rates["UAH"] = 27.6
 	err = store.Write(rates)
 	assert.Nil(t, err)

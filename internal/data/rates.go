@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -21,22 +20,22 @@ type RateResponse struct {
 	Rates map[string]FloatRate `json:"rates"`
 }
 
-type Date time.Time
-
-func (r Date) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", time.Time(r).Format("2006-01-02 15:04:05"))), nil
+type Date struct {
+	time.Time
 }
 
-func (r *Date) UnmarshalJSON(data []byte) error {
-	dataStr := strings.Trim(string(data), "\"")
-	// ditch the timezone
-	dataStr = strings.Split(dataStr, "+")[0]
+// API response time.Time -> string "2024-04-29 12:34:56+00"
+func (r Date) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + r.Format("2006-01-02 15:04:05+00") + `"`), nil
+}
 
-	t, err := time.Parse("2006-01-02 15:04:05", dataStr)
+// API response string "2024-04-29 12:34:56+00" -> time.Time
+func (r *Date) UnmarshalJSON(data []byte) error {
+	t, err := time.Parse("2006-01-02 15:04:05+00", strings.Trim(string(data), "\""))
 	if err != nil {
-		t = time.Time{}
+		return err
 	}
-	*r = Date(t)
+	r.Time = t
 	return nil
 }
 
@@ -45,12 +44,12 @@ func (r *Date) ParseDate(date string) error {
 	if err != nil {
 		return err
 	}
-	*r = Date(t)
+	r.Time = t
 	return nil
 }
 
 func (r Date) String() string {
-	return time.Time(r).Format("2006-01-02")
+	return r.Format("2006-01-02")
 }
 
 // Rates is a client response

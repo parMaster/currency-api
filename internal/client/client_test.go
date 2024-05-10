@@ -21,7 +21,7 @@ func Test_ParseJSONResponse(t *testing.T) {
 	assert.NotEmpty(t, rates.Date)
 	date, err := time.Parse("2006-01-02 15:04:05+00", "2024-04-29 12:34:56+00")
 	assert.Nil(t, err)
-	assert.Equal(t, data.Date(date), rates.Date)
+	assert.Equal(t, data.Date{Time: date}, rates.Date)
 	assert.NotEmpty(t, rates.Base)
 	assert.Equal(t, "USD", rates.Base)
 	assert.NotEmpty(t, rates.Rates)
